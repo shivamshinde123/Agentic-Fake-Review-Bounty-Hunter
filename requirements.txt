@@ -1,0 +1,40 @@
+# Core Libraries
+numpy
+pandas
+scikit-learn
+python-dotenv   # For environment variables
+
+# NLP
+transformers # For BERT/GPT-2
+sentence-transformers
+# spacy
+# en_core_web_sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.6.0/en_core_web_sm-3.6.0.tar.gz  # SpaCy model
+
+# Big Data
+pyspark
+neo4j        # Neo4j Python driver
+py2neo       # Alternative Neo4j library
+
+# Machine Learning
+torch          # For Hugging Face models
+xgboost
+imbalanced-learn
+
+# Generative AI
+openai          # Optional (if using GPT-4 API)
+accelerate      # For distributed training
+
+# Agentic AI
+langchain      # Lightweight agent framework
+autogen        # Microsoft AutoGen (multi-agent)
+
+# Deployment
+fastapi
+uvicorn    # ASGI server
+docker        # For containerization
+streamlit     # For demo app (optional)
+
+# Utilities
+tqdm       # Progress bars
+jupyter         # For notebooks
+pyyaml           # Config file parsing
