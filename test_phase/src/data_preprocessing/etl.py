@@ -127,7 +127,7 @@ def preprocess_review_data(spark):
 def preprocess_user_data(spark):
     try:
         # Load Users data
-        users_df = spark.read.json("test_phase/data/raw/yelp_academic_dataset_review.json")
+        users_df = spark.read.json("test_phase/data/raw/yelp_academic_dataset_user.json")
         processed_users_df = users_df.select(
             col("user_id"),
             col("name"), 
@@ -172,7 +172,7 @@ def preprocess_user_data(spark):
 def preprocess_business_data(spark):
     try:
         # Load Business data
-        business_df = spark.read.json("test_phase/data/raw/yelp_academic_dataset_review.json")
+        business_df = spark.read.json("test_phase/data/raw/yelp_academic_dataset_business.json")
         processed_business_df = business_df.select(
             col("business_id"),
             col("name"),
