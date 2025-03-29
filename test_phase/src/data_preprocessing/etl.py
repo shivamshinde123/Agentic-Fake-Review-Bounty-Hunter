@@ -6,11 +6,9 @@ import sqlite3
 import os
 import pandas as pd
 
-JDBC_URL = "jdbc:sqlite:D:/Projects/Agentic Fake Review Bounty Hunter/test_phase/data/processed/yelp_reviews.db"
-
-def create_table():
+def create_table(db_path):
     """Creates a table to store all JSON fields in SQLite."""
-    conn = sqlite3.connect('D:/Projects/Agentic Fake Review Bounty Hunter/test_phase/data/processed/yelp_reviews.db')
+    conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
 
     # Create Table for Reviews, USers and Business JSOn files
@@ -78,7 +76,7 @@ def df_to_table(df, table_name, jdbc_url):
         .mode("overwrite") \
         .save()
 
-def preprocess_data(spark):
+def preprocess_data(spark, jdbc_url):
     try:
         # Load Reviews data
         reviews_df = spark.read.json("test_phase/data/raw/yelp_academic_dataset_review.json")
@@ -94,10 +92,7 @@ def preprocess_data(spark):
             col("date")
         )
 
-        # Drop rows with null values
-        #processed_reviews_df = processed_reviews_df.filter(col('text').isNotNull())
-
-        df_to_table(processed_reviews_df, "reviews", JDBC_URL)
+        df_to_table(processed_reviews_df, "reviews", jdbc_url)
         print("✅ Reviews.JSON Data successfully saved to SQLite!")
 
         # Load Users data
@@ -127,7 +122,7 @@ def preprocess_data(spark):
             col("compliment_photos")
         )
 
-        df_to_table(processed_users_df, "users", JDBC_URL)
+        df_to_table(processed_users_df, "users", jdbc_url)
         print("✅ Users.JSON Data successfully saved to SQLite!")
 
         # Load Business data
@@ -147,39 +142,57 @@ def preprocess_data(spark):
             col("categories")
         )
 
-        df_to_table(processed_business_df, "business", JDBC_URL)
+        df_to_table(processed_business_df, "business", jdbc_url)
         print("✅ Business.JSON Data successfully saved to SQLite!")
 
     except Exception as e:
         print(f"❌ Error occurred: {e}")
         
-def data_processing():
-    conn = sqlite3.connect('D:/Projects/Agentic Fake Review Bounty Hunter/test_phase/data/processed/yelp_reviews.db')
+def data_processing(db_path):
+    conn = sqlite3.connect(db_path)
 
     users_df = pd.read_sql_query("SELECT * from users", conn)
     business_df = pd.read_sql_query("SELECT * from business", conn)
     reviews_df = pd.read_sql_query("SELECT * from reviews", conn)
 
+    # Checking the Dataframes if any null values exist
+    print(users_df.isnull().sum())
+    print(business_df.isnull().sum())
+    print(reviews_df.isnull().sum())
+
+    # Merge all the 3 dataframes for further NLP Feature Engineering
+    merged_df = reviews_df.merge(users_df, on="user_id", how="left")
+    df = merged_df.merge(business_df, on="business_id", how="left")
+
+    df.head()
+
 
 if __name__ == "__main__":
-    create_table()
+    db_path = 'D:/Projects/Agentic Fake Review Bounty Hunter/test_phase/data/processed/yelp_dataset.db'
+    jdbc_url = "jdbc:sqlite:D:/Projects/Agentic Fake Review Bounty Hunter/test_phase/data/processed/yelp_dataset.db"
 
-    os.environ["HADOOP_HOME"] = "D:\\Hadoop"
-    spark_temp_dir = "D:\\Projects\\Agentic Fake Review Bounty Hunter\\test_phase\\spark_temp"
+    if not os.path.exists(db_path):
+        print("Database file not found. Creating tables and preprocessing data...")
+        create_table(db_path)
 
-    # Create Spark session with Windows-friendly settings
-    spark = SparkSession.builder \
-        .appName("YelpDataPreprocessing") \
-        .master("local[*]") \
-        .config("spark.driver.host", "localhost") \
-        .config("spark.local.dir", spark_temp_dir) \
-        .config("spark.sql.legacy.allowUntypedScalaUDF", "true") \
-        .config("spark.hadoop.fs.file.impl", "org.apache.hadoop.fs.LocalFileSystem") \
-        .config("spark.executor.extraJavaOptions", "-Djava.io.tmpdir=D:\\Projects\\Agentic Fake Review Bounty Hunter\\test_phase\\spark_temp") \
-        .config("spark.jars", "D:\\Projects\\Agentic Fake Review Bounty Hunter\\test_phase\\data\\processed\\sqlite-jdbc.jar") \
-        .config("spark.cleaner.referenceTracking.cleanCheckpoints", "false") \
-        .getOrCreate()
+        os.environ["HADOOP_HOME"] = "D:\\Hadoop"
+        spark_temp_dir = "D:\\Projects\\Agentic Fake Review Bounty Hunter\\test_phase\\spark_temp"
 
-    preprocess_data(spark)
-    
-    spark.stop()
+        # Create Spark session with Windows-friendly settings
+        spark = SparkSession.builder \
+            .appName("YelpDataPreprocessing") \
+            .master("local[*]") \
+            .config("spark.driver.host", "localhost") \
+            .config("spark.local.dir", spark_temp_dir) \
+            .config("spark.sql.legacy.allowUntypedScalaUDF", "true") \
+            .config("spark.hadoop.fs.file.impl", "org.apache.hadoop.fs.LocalFileSystem") \
+            .config("spark.executor.extraJavaOptions", "-Djava.io.tmpdir=D:\\Projects\\Agentic Fake Review Bounty Hunter\\test_phase\\spark_temp") \
+            .config("spark.jars", "D:\\Projects\\Agentic Fake Review Bounty Hunter\\test_phase\\data\\processed\\sqlite-jdbc.jar") \
+            .config("spark.cleaner.referenceTracking.cleanCheckpoints", "false") \
+            .getOrCreate()
+
+        preprocess_data(spark, jdbc_url)
+        spark.stop()
+    else:
+        print("Database file exists. Skipping table creation and data preprocessing.")
+        data_processing(db_path)
