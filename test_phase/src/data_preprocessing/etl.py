@@ -4,15 +4,17 @@ from pyspark.sql.types import StringType
 import shutil
 import sqlite3
 import os
+import pandas as pd
 
+JDBC_URL = "jdbc:sqlite:D:/Projects/Agentic Fake Review Bounty Hunter/test_phase/data/processed/yelp_reviews.db"
 
-def create_review_table():
+def create_table():
     """Creates a table to store all JSON fields in SQLite."""
     conn = sqlite3.connect('D:/Projects/Agentic Fake Review Bounty Hunter/test_phase/data/processed/yelp_reviews.db')
     cursor = conn.cursor()
 
-    # Create Table for Reviews.JSON
-    cursor.execute("""
+    # Create Table for Reviews, USers and Business JSOn files
+    cursor.executescript("""
     CREATE TABLE IF NOT EXISTS reviews (
         review_id TEXT PRIMARY KEY,
         user_id TEXT,
@@ -23,18 +25,7 @@ def create_review_table():
         cool INTEGER,
         text TEXT,
         date TEXT
-    );
-    """)
-
-    conn.commit()
-    conn.close()
-
-def create_user_table():
-    conn = sqlite3.connect('D:/Projects/Agentic Fake Review Bounty Hunter/test_phase/data/processed/yelp_reviews.db')
-    cursor = conn.cursor()
-
-    # Create Table for Users.JSON
-    cursor.execute("""
+    );               
     CREATE TABLE IF NOT EXISTS users (
         user_id TEXT PRIMARY KEY,
         name TEXT,
@@ -59,17 +50,6 @@ def create_user_table():
         compliment_writer INTEGER,
         compliment_photos INTEGER
     );
-    """)
-
-    conn.commit()
-    conn.close()
-
-def create_business_table():
-    conn = sqlite3.connect('D:/Projects/Agentic Fake Review Bounty Hunter/test_phase/data/processed/yelp_reviews.db')
-    cursor = conn.cursor()
-
-    # Create Table for Business.JSON
-    cursor.execute("""
     CREATE TABLE IF NOT EXISTS business (
         business_id TEXT PRIMARY KEY,
         name TEXT,
@@ -89,7 +69,16 @@ def create_business_table():
     conn.commit()
     conn.close()
 
-def preprocess_review_data(spark):
+def df_to_table(df, table_name, jdbc_url):
+    df.coalesce(1).write \
+        .format("jdbc") \
+        .option("url", jdbc_url) \
+        .option("dbtable", table_name) \
+        .option("driver", "org.sqlite.JDBC") \
+        .mode("overwrite") \
+        .save()
+
+def preprocess_data(spark):
     try:
         # Load Reviews data
         reviews_df = spark.read.json("test_phase/data/raw/yelp_academic_dataset_review.json")
@@ -106,26 +95,11 @@ def preprocess_review_data(spark):
         )
 
         # Drop rows with null values
-        processed_reviews_df = processed_reviews_df.filter(col('text').isNotNull())
+        #processed_reviews_df = processed_reviews_df.filter(col('text').isNotNull())
 
-        processed_reviews_df = processed_reviews_df.coalesce(1)
-        jdbc_url = "jdbc:sqlite:D:/Projects/Agentic Fake Review Bounty Hunter/test_phase/data/processed/yelp_reviews.db"
-
-        processed_reviews_df.write \
-            .format("jdbc") \
-            .option("url", jdbc_url) \
-            .option("dbtable", "reviews") \
-            .option("driver", "org.sqlite.JDBC") \
-            .mode("overwrite") \
-            .save()
-
+        df_to_table(processed_reviews_df, "reviews", JDBC_URL)
         print("✅ Reviews.JSON Data successfully saved to SQLite!")
 
-    except Exception as e:
-        print(f"❌ Error occurred: {e}")
-
-def preprocess_user_data(spark):
-    try:
         # Load Users data
         users_df = spark.read.json("test_phase/data/raw/yelp_academic_dataset_user.json")
         processed_users_df = users_df.select(
@@ -153,24 +127,9 @@ def preprocess_user_data(spark):
             col("compliment_photos")
         )
 
-        processed_users_df = processed_users_df.coalesce(1)
-        jdbc_url = "jdbc:sqlite:D:/Projects/Agentic Fake Review Bounty Hunter/test_phase/data/processed/yelp_reviews.db"
-
-        processed_users_df.write \
-            .format("jdbc") \
-            .option("url", jdbc_url) \
-            .option("dbtable", "users") \
-            .option("driver", "org.sqlite.JDBC") \
-            .mode("overwrite") \
-            .save()
-
+        df_to_table(processed_users_df, "users", JDBC_URL)
         print("✅ Users.JSON Data successfully saved to SQLite!")
 
-    except Exception as e:
-        print(f"❌ Error occurred: {e}")
-
-def preprocess_business_data(spark):
-    try:
         # Load Business data
         business_df = spark.read.json("test_phase/data/raw/yelp_academic_dataset_business.json")
         processed_business_df = business_df.select(
@@ -188,26 +147,22 @@ def preprocess_business_data(spark):
             col("categories")
         )
 
-        processed_business_df = processed_business_df.coalesce(1)
-        jdbc_url = "jdbc:sqlite:D:/Projects/Agentic Fake Review Bounty Hunter/test_phase/data/processed/yelp_reviews.db"
-
-        processed_business_df.write \
-            .format("jdbc") \
-            .option("url", jdbc_url) \
-            .option("dbtable", "business") \
-            .option("driver", "org.sqlite.JDBC") \
-            .mode("overwrite") \
-            .save()
-
+        df_to_table(processed_business_df, "business", JDBC_URL)
         print("✅ Business.JSON Data successfully saved to SQLite!")
 
     except Exception as e:
         print(f"❌ Error occurred: {e}")
         
+def data_processing():
+    conn = sqlite3.connect('D:/Projects/Agentic Fake Review Bounty Hunter/test_phase/data/processed/yelp_reviews.db')
+
+    users_df = pd.read_sql_query("SELECT * from users", conn)
+    business_df = pd.read_sql_query("SELECT * from business", conn)
+    reviews_df = pd.read_sql_query("SELECT * from reviews", conn)
+
 
 if __name__ == "__main__":
-    create_review_table()
-    create_user_table()
+    create_table()
 
     os.environ["HADOOP_HOME"] = "D:\\Hadoop"
     spark_temp_dir = "D:\\Projects\\Agentic Fake Review Bounty Hunter\\test_phase\\spark_temp"
@@ -225,8 +180,6 @@ if __name__ == "__main__":
         .config("spark.cleaner.referenceTracking.cleanCheckpoints", "false") \
         .getOrCreate()
 
-    preprocess_review_data(spark)
-    preprocess_user_data(spark)
-    preprocess_business_data(spark)
+    preprocess_data(spark)
     
     spark.stop()
