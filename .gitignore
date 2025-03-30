@@ -1,3 +1,4 @@
 /test_phase/data/
 /test_phase/spark_temp
 *.json
+/test_phase/.env
