@@ -1,8 +1,10 @@
 # Core Libraries
 numpy
 pandas
+dask[complete]
 scikit-learn
 python-dotenv   # For environment variables
+psycopg2
 
 # NLP
 transformers # For BERT/GPT-2
