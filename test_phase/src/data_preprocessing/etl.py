@@ -1,27 +1,57 @@
-from pyspark.sql import SparkSession
 import os
 import pandas as pd
-import dask.dataframe as dd
-import numpy as np
-from dotenv import load_dotenv
 from sqlalchemy import create_engine, text
+from sqlalchemy.exc import SQLAlchemyError
+from dotenv import load_dotenv
 
+# Load environment variables
+load_dotenv()
+
+# ✅ Configure PostgreSQL connection with pooling
+engine = create_engine(
+    os.environ['SQL_ENGINE'] + "?keepalives=1&connect_timeout=30",
+    isolation_level="AUTOCOMMIT",
+    pool_size=5,
+    max_overflow=10,
+    pool_timeout=60,
+    connect_args={"application_name": "ETL_Optimized"}
+)
+
+def create_sample_data(engine, rows=100000):
+    print("⚙️ Sampling and saving 1M rows directly from PostgreSQL...")
+    with engine.connect() as conn:
+        #conn.execute(text("DROP TABLE IF EXISTS yelp_sample_data"))
+        conn.execute(text(f"""
+            CREATE TABLE IF NOT EXISTS yelp_sample_data AS
+            SELECT *
+            FROM merged_full_data
+            ORDER BY RANDOM()
+            LIMIT {rows};
+        """))
+    print("✅ Sampled data saved to 'yelp_sample_data'")
+
+def data_processing():
+    print("🔍 Loading sampled data into pandas DataFrame...")
+    df = pd.read_sql("SELECT * FROM yelp_sample_data", engine)
+
+    df["review_length"] = df["text"].fillna('').apply(lambda x: len(x.strip().split()))
+    df["yelping_since"] = pd.to_datetime(df["yelping_since"], errors="coerce")
+    df["yelping_since_days"] = (pd.Timestamp.today() - df["yelping_since"]).dt.days
+
+    df["elite"] = df["elite"].fillna('').astype(str)
+    df["elite_years"] = df["elite"].apply(lambda x: len(x.split(',')) if x.strip() else 0)
+
+    df["friends"] = df["friends"].fillna('').astype(str)
+    df["friends_count"] = df["friends"].apply(lambda x: len(x.split(',')) if x.strip() else 0)
+
+    df["review_stars"] = pd.to_numeric(df["review_stars"], errors="coerce")
+    df["biz_stars"] = pd.to_numeric(df["biz_stars"], errors="coerce")
+    df["rating_deviation"] = (df["review_stars"] - df["biz_stars"]).abs()
+
+    print("💾 Saving processed sample data back to PostgreSQL...")
+    df.to_sql("yelp_sample_data", engine, if_exists="replace", index=False)
+    print("✅ Data processed and saved successfully.")
 
 if __name__ == "__main__":
-    load_dotenv()
-    jdbc_url = os.environ['JDBC_URL']
-    engine =  create_engine(os.environ['SQL_ENGINE'])
-
-    chunk_size = 100_000
-    chunk_data = pd.read_sql("SELECT * FROM merged_full_data", engine, chunksize=chunk_size)
-
-    for i, chunk in enumerate(chunk_data):
-        print(f"🔄 Processing batch {i+1}")
-        print(chunk.head(1))
-        
-        # df["review_length"] = df["text"].apply(lambda x: len(x.split()))
-        # df["yelping_since"] = pd.to_datetime(df["yelping_since"], errors="coerce")
-        # df["account_age_days"] = (pd.to_datetime("today") - df["yelping_since"]).dt.days
-        # df["elite_years"] = df["elite"].apply(lambda x: len(x.split(",")) if pd.notnull(x) and x!="" else 0)
-        # df["friends_count"] = df["friends"].apply(lambda x: len(x.split(",")) if pd.notnull(x) and x!="" else 0)
-        # df["rating_deviation"] = np.abs(df["review_stars"] - df["biz_stars"])
+    create_sample_data(engine)
+    data_processing()
