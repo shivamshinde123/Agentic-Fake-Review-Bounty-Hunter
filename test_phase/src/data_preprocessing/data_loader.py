@@ -14,18 +14,18 @@ def create_table(engine):
             review_id TEXT PRIMARY KEY,
             user_id TEXT,
             business_id TEXT,
-            stars INTEGER,
+            stars REAL,
             useful INTEGER,
             funny INTEGER,
             cool INTEGER,
             text TEXT,
-            date TEXT
+            date TIMESTAMP
         );"""))              
         conn.execute(text("""CREATE TABLE IF NOT EXISTS users (
             user_id TEXT PRIMARY KEY,
             name TEXT,
             review_count INTEGER,
-            yelping_since TEXT,
+            yelping_since TIMESTAMP,
             useful INTEGER,
             funny INTEGER,
             cool INTEGER,
@@ -78,7 +78,7 @@ def save_data(spark, jdbc_url):
             col("review_id"),
             col("user_id"),
             col("business_id"),
-            col("stars"),
+            col("stars").cast("float"),
             col("useful"),
             col("funny"),
             col("cool"),
@@ -102,7 +102,7 @@ def save_data(spark, jdbc_url):
             col("elite"), 
             col("friends"), 
             col("fans"),
-            col("average_stars"),
+            col("average_stars").cast("float"),
             col("compliment_hot"),
             col("compliment_more"),
             col("compliment_profile"),
@@ -192,7 +192,9 @@ if __name__ == "__main__":
         .getOrCreate()
     
     # Build SQAlchemy Engine
-    engine =  create_engine(os.environ['SQL_ENGINE'])
+    engine =  create_engine(
+        os.environ['SQL_ENGINE'] + "?keepalives=1&keepalives_idle=30&keepalives_interval=10&connect_timeout=30"
+        )
 
     print("Creating tables and preprocessing data using PostgreSQL(SQLAlchemy).....")
     # Create SQL Tables
