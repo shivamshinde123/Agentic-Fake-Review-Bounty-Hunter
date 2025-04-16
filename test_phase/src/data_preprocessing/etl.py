@@ -1,86 +1,27 @@
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, udf, regexp_replace, lower
-from pyspark.sql.types import StringType
-import shutil
-import sqlite3
 import os
+import pandas as pd
+import dask.dataframe as dd
+import numpy as np
+from dotenv import load_dotenv
+from sqlalchemy import create_engine, text
 
-
-def create_table():
-    """Creates a table to store all JSON fields in SQLite."""
-    conn = sqlite3.connect('D:/Projects/Agentic Fake Review Bounty Hunter/test_phase/data/processed/yelp_reviews.db')
-    cursor = conn.cursor()
-
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS reviews (
-        review_id TEXT PRIMARY KEY,
-        user_id TEXT,
-        business_id TEXT,
-        stars INTEGER,
-        useful INTEGER,
-        funny INTEGER,
-        cool INTEGER,
-        text TEXT,
-        date TEXT
-    );
-    """)
-
-    conn.commit()
-    conn.close()
-
-def preprocess_data():
-    os.environ["HADOOP_HOME"] = "D:\\Hadoop"
-    spark_temp_dir = "D:\\Projects\\Agentic Fake Review Bounty Hunter\\test_phase\\spark_temp"
-
-    # Create Spark session with Windows-friendly settings
-    spark = SparkSession.builder \
-        .appName("YelpDataPreprocessing") \
-        .master("local[*]") \
-        .config("spark.driver.host", "localhost") \
-        .config("spark.local.dir", spark_temp_dir) \
-        .config("spark.sql.legacy.allowUntypedScalaUDF", "true") \
-        .config("spark.hadoop.fs.file.impl", "org.apache.hadoop.fs.LocalFileSystem") \
-        .config("spark.executor.extraJavaOptions", "-Djava.io.tmpdir=D:\\spark_temp") \
-        .config("spark.jars", "D:\\Projects\\Agentic Fake Review Bounty Hunter\\test_phase\\data\\processed\\sqlite-jdbc.jar") \
-        .getOrCreate()
-
-    try:
-        # Load data
-        reviews_df = spark.read.json("data/raw/yelp_academic_dataset_review.json")
-        processed_reviews_df = reviews_df.select(
-            col("review_id"),
-            col("user_id"),
-            col("business_id"),
-            col("stars"),
-            col("useful"),
-            col("funny"),
-            col("cool"),
-            regexp_replace(col("text"), r"\s+", " ").alias("text"),
-            col("date")
-        )
-
-        # Drop rows with null values
-        processed_reviews_df = processed_reviews_df.filter(col('text').isNotNull())
-
-        processed_reviews_df = processed_reviews_df.coalesce(1)
-        jdbc_url = "jdbc:sqlite:D:/Projects/Agentic Fake Review Bounty Hunter/test_phase/data/processed/yelp_reviews.db"
-
-        processed_reviews_df.write \
-            .format("jdbc") \
-            .option("url", jdbc_url) \
-            .option("dbtable", "reviews") \
-            .option("driver", "org.sqlite.JDBC") \
-            .mode("overwrite") \
-            .save()
-
-        print("✅ Data successfully saved to SQLite!")
-        spark.stop()
-
-    except Exception as e:
-        print(f"❌ Error occurred: {e}")
-        
 
 if __name__ == "__main__":
-    create_table()
-    preprocess_data()
-    
+    load_dotenv()
+    jdbc_url = os.environ['JDBC_URL']
+    engine =  create_engine(os.environ['SQL_ENGINE'])
+
+    chunk_size = 100_000
+    chunk_data = pd.read_sql("SELECT * FROM merged_full_data", engine, chunksize=chunk_size)
+
+    for i, chunk in enumerate(chunk_data):
+        print(f"🔄 Processing batch {i+1}")
+        print(chunk.head(1))
+        
+        # df["review_length"] = df["text"].apply(lambda x: len(x.split()))
+        # df["yelping_since"] = pd.to_datetime(df["yelping_since"], errors="coerce")
+        # df["account_age_days"] = (pd.to_datetime("today") - df["yelping_since"]).dt.days
+        # df["elite_years"] = df["elite"].apply(lambda x: len(x.split(",")) if pd.notnull(x) and x!="" else 0)
+        # df["friends_count"] = df["friends"].apply(lambda x: len(x.split(",")) if pd.notnull(x) and x!="" else 0)
+        # df["rating_deviation"] = np.abs(df["review_stars"] - df["biz_stars"])

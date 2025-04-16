@@ -4,3 +4,4 @@
 env-bountyhunter
 .ipynb_checkpoints
 *.csv
+/test_phase/.env
