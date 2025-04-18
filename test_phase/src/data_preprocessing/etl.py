@@ -17,10 +17,9 @@ engine = create_engine(
     connect_args={"application_name": "ETL_Optimized"}
 )
 
-def create_sample_data(engine, rows=100000):
-    print("⚙️ Sampling and saving 1M rows directly from PostgreSQL...")
+def create_sample_data(engine, rows=2000000):
+    print("⚙️ Sampling and saving 2M rows directly from PostgreSQL...")
     with engine.connect() as conn:
-        #conn.execute(text("DROP TABLE IF EXISTS yelp_sample_data"))
         conn.execute(text(f"""
             CREATE TABLE IF NOT EXISTS yelp_sample_data AS
             SELECT *
@@ -41,8 +40,8 @@ def data_processing():
     df["elite"] = df["elite"].fillna('').astype(str)
     df["elite_years"] = df["elite"].apply(lambda x: len(x.split(',')) if x.strip() else 0)
 
-    df["friends"] = df["friends"].fillna('').astype(str)
-    df["friends_count"] = df["friends"].apply(lambda x: len(x.split(',')) if x.strip() else 0)
+    df["user_friends"] = df["user_friends"].fillna('').astype(str)
+    df["friends_count"] = df["user_friends"].apply(lambda x: len(x.split(',')) if x.strip() else 0)
 
     df["review_stars"] = pd.to_numeric(df["review_stars"], errors="coerce")
     df["biz_stars"] = pd.to_numeric(df["biz_stars"], errors="coerce")
@@ -52,6 +51,15 @@ def data_processing():
     df.to_sql("yelp_sample_data", engine, if_exists="replace", index=False)
     print("✅ Data processed and saved successfully.")
 
+def csv_data(file_path):
+    print("🔍 Loading processed sampled data into pandas DataFrame...")
+    df = pd.read_sql("SELECT * FROM yelp_sample_data", engine)
+
+    print("Saving DataFrame into CSV Format...")
+    df.to_csv(file_path + "yelp_sample_data.csv", index=False, encoding="utf-8")
+    print("✅ Data saved in CSV Format successfully.")
+
 if __name__ == "__main__":
     create_sample_data(engine)
     data_processing()
+    csv_data(file_path="test_phase/data/processed/")
