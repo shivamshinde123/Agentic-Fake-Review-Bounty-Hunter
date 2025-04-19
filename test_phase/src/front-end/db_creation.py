@@ -51,7 +51,7 @@ if __name__ == "__main__":
     create_table_query = f'''
     CREATE TABLE IF NOT EXISTS {table_name} (
     user_id TEXT PRIMARY KEY NOT NULL,
-    name TEXT NOT NULL,
+    username TEXT NOT NULL,
     password TEXT NOT NULL
     )
    '''
@@ -63,7 +63,7 @@ if __name__ == "__main__":
 
     # SQL query to insert values into the userdata table
     insert_table_query = f'''
-        INSERT INTO {table_name} (user_id, name, password) VALUES (?, ?, ?)
+        INSERT INTO {table_name} (user_id, username, password) VALUES (?, ?, ?)
     '''
 
     # Drop the table if it exists and recreate it
@@ -79,4 +79,3 @@ if __name__ == "__main__":
         row.append('password')  # Default password for each user
         db_manage_class.add_row_in_table(insert_table_query, tuple(row))
 
-    
