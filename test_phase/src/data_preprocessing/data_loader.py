@@ -1,5 +1,6 @@
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, udf, regexp_replace
+from pyspark.sql.functions import col, udf, regexp_replace, length, size, split, when, floor, rand
+from pyspark.sql.types import IntegerType
 import shutil
 import os
 import pandas as pd
@@ -12,16 +13,17 @@ def create_table(engine):
         conn.execute(text(
             """CREATE TABLE IF NOT EXISTS users (
                 user_id TEXT PRIMARY KEY,
-                name TEXT,
-                review_count INTEGER,
+                user_name TEXT,
+                user_review_count INTEGER,
                 yelping_since TIMESTAMP,
                 useful INTEGER,
                 funny INTEGER,
                 cool INTEGER,
-                elite TEXT,
-                friends TEXT,
+                elite INTEGER,
+                friends INTEGER,
                 fans INTEGER,
                 average_stars REAL,
+                user_age INTEGER,
                 compliment_hot INTEGER,
                 compliment_more INTEGER,
                 compliment_profile INTEGER,
@@ -38,15 +40,15 @@ def create_table(engine):
         conn.execute(text(
             """CREATE TABLE IF NOT EXISTS business (
                 business_id TEXT PRIMARY KEY,
-                name TEXT,
+                biz_name TEXT,
                 address TEXT,
-                city TEXT,
-                state TEXT,
+                biz_city TEXT,
+                biz_state TEXT,
                 postal_code TEXT,
                 latitude REAL,
                 longitude REAL,
-                stars REAL,
-                review_count INTEGER,
+                biz_stars REAL,
+                biz_review_count INTEGER,
                 is_open INTEGER,
                 categories TEXT
             );"""
@@ -56,7 +58,7 @@ def create_table(engine):
                 review_id TEXT PRIMARY KEY,
                 user_id TEXT,
                 business_id TEXT,
-                stars REAL,
+                reviews_stars REAL,
                 useful INTEGER,
                 funny INTEGER,
                 cool INTEGER,
@@ -73,15 +75,15 @@ def save_filtered_data(spark, jdbc_url):
         business_df = spark.read.json("test_phase/data/raw/yelp_academic_dataset_business.json")
         business_df = business_df.select(
             col("business_id"),
-            col("name"),
+            col("name").alias("biz_name"),
             col("address"),
-            col("city"),
-            col("state"),
+            col("city").alias("biz_city"),
+            col("state").alias("biz_state"),
             col("postal_code"),
             col("latitude"),
             col("longitude"),
-            col("stars"),
-            col("review_count"),
+            col("stars").alias("biz_stars"),
+            col("review_count").alias("biz_review_count"),
             col("is_open"),
             col("categories")
         )
@@ -92,10 +94,27 @@ def save_filtered_data(spark, jdbc_url):
 
         # Load and Save users data
         users_df = spark.read.json("test_phase/data/raw/yelp_academic_dataset_user.json")
+
+        users_df = users_df.withColumn(
+        "elite",
+        when(col("elite") == "", 0)
+        .otherwise(size(split(col("elite"), ",")))
+        .cast("int")
+        )
+
+        users_df = users_df.withColumn(
+        "friends", 
+        when(col("friends") == "", 0)
+        .otherwise(size(split(col("friends"), ",")))
+        .cast("int")
+        )
+
+        users_df = users_df.withColumn("user_age", floor(rand() * (70 - 12 + 1) + 12).cast("int"))
+
         users_df = users_df.select(
             col("user_id"),
-            col("name"), 
-            col("review_count"), 
+            col("name").alias("user_name"), 
+            col("review_count").alias("user_review_count"), 
             col("yelping_since"), 
             col("useful"),
             col("funny"), 
@@ -104,6 +123,7 @@ def save_filtered_data(spark, jdbc_url):
             col("friends"), 
             col("fans"),
             col("average_stars"),
+            col("user_age"),
             col("compliment_hot"),
             col("compliment_more"),
             col("compliment_profile"),
@@ -132,7 +152,7 @@ def save_filtered_data(spark, jdbc_url):
             col("review_id"),
             col("user_id"),
             col("business_id"),
-            col("stars"),
+            col("stars").alias("review_stars"),
             col("useful"),
             col("funny"),
             col("cool"),
@@ -167,18 +187,20 @@ def merge_data(engine):
         conn.execute(text("""
             CREATE TABLE IF NOT EXISTS merged_data AS
             SELECT
-                r.review_id, r.user_id, r.business_id, r.stars AS review_stars, r.text,
-                u.review_count AS user_review_count, u.yelping_since, u.elite, u.friends, u.fans
-            FROM reviews r
+                r.review_id, r.user_id, r.business_id, r.review_stars, r.text, r.date,
+                u.user_name, u.user_review_count, u.yelping_since, u.elite, u.friends, u.average_stars, u.user_age
+            FROM (
+            SELECT * FROM reviews ORDER BY random() LIMIT 100000
+            ) r
             JOIN users u ON r.user_id = u.user_id
         """))
         print("🔄 Creating merged_full_data (merged_data + business)...")
         conn.execute(text("""
             CREATE TABLE IF NOT EXISTS merged_full_data AS
             SELECT
-                m.review_id, m.user_id, m.business_id, m.review_stars, m.text,
-                m.user_review_count, m.yelping_since, m.elite, m.friends as user_friends, m.fans,
-                b.city as biz_city, b.state as biz_state, b.stars AS biz_stars, b.review_count AS biz_review_count, b.categories
+                m.review_id, m.user_id, m.business_id, m.review_stars, m.text, m.date,
+                m.user_name, m.user_review_count, m.yelping_since, m.elite, m.friends, m.average_stars, m.user_age,
+                b.biz_name, b.biz_city, b.biz_state, b.biz_stars, b.biz_review_count, b.categories
             FROM merged_data m
             JOIN business b ON m.business_id = b.business_id
         """))
@@ -227,5 +249,5 @@ if __name__ == "__main__":
 
     print("🛠️ Merging and preprocessing...") 
     merge_data(engine)
-    data_to_csv(engine)
+    # data_to_csv(engine)
     
