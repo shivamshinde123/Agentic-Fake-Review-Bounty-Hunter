@@ -10,6 +10,7 @@ datasets
 # NLP
 transformers # For BERT/GPT-2
 sentence-transformers
+textblob
 # spacy
 # en_core_web_sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.6.0/en_core_web_sm-3.6.0.tar.gz  # SpaCy model
 
