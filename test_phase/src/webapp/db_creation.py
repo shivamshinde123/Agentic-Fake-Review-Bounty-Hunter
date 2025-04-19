@@ -91,9 +91,9 @@ if __name__ == "__main__":
 
 
     # Load user data from a CSV file
-    existing_users_df = pd.read_csv(os.path.join("test_phase", "src", "front-end", "Data", "users.csv"))
+    existing_users_df = pd.read_csv(os.path.join("test_phase", "src", "webapp", "Data", "users.csv"))
 
-    existing_business_df = pd.read_csv(os.path.join("test_phase", "src", "front-end", "Data", "businesses.csv"))
+    existing_business_df = pd.read_csv(os.path.join("test_phase", "src", "webapp", "Data", "businesses.csv"))
 
     # Insert each user from the CSV into the database with a default password
     for i in range(existing_users_df.shape[0]):

@@ -82,7 +82,7 @@ class LoginSignupClass:
         col_b.title("Project")
 
         # Display homepage image
-        st.image(os.path.join("test_phase", "src", "front-end","Images", "HomePagePhoto.jpg"))
+        st.image(os.path.join("test_phase", "src", "webapp","Images", "HomePagePhoto.jpg"))
         
         col1, col2, col3, col4, col5, col6 = st.columns([2, 2, 2, 2, 2, 2])
 
