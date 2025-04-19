@@ -24,7 +24,7 @@ class LoginSignupClass:
 
         if len(rows) == 1:  # Login Scenario
             stored_password = rows[0]
-            if password == stored_password:
+            if str(password) == str(stored_password[0]):
                 return True
             else:
                 st.session_state['password_incorrect_warning'] = "Your password is incorrect!"
