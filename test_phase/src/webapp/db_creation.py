@@ -46,6 +46,10 @@ if __name__ == "__main__":
     user_table_name = "userdata"
     business_table_name = "business_data"
 
+    # Ensure the Data directory exists
+    if not os.path.exists("Data"):
+        os.makedirs("Data")
+
     # Initialize the DBManagement class
     user_db_manage_class = UserDBManagement(os.path.join("Data", f"{user_database_name}.db"))
     business_db_manage_class = UserDBManagement(os.path.join("Data", f"{business_database_name}.db"))
@@ -54,7 +58,7 @@ if __name__ == "__main__":
     user_create_table_query = f'''
     CREATE TABLE IF NOT EXISTS {user_table_name} (
     user_id TEXT PRIMARY KEY NOT NULL,
-    username TEXT NOT NULL,
+    username TEXT,
     password TEXT NOT NULL
     )
    '''
