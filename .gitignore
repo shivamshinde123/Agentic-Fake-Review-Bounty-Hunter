@@ -6,3 +6,4 @@ env-bountyhunter
 *.csv
 /test_phase/.env
 *.db
+env
