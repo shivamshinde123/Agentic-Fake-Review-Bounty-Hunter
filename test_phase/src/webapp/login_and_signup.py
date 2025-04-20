@@ -70,7 +70,7 @@ class LoginSignupClass:
             if len(rows) == 1:
                 st.session_state['existing_username_warnings'] = "This username is already taken. Use the different one!"
                 return st.session_state['existing_username_warnings']
-        
+    
     def login_signup_page(self):
         """
         Render the login/signup landing page UI.
@@ -213,8 +213,3 @@ if __name__ == "__main__":
             st.write(f"Comment added by {st.session_state['username']} for the business '{selected_business}'. Review: {user_review}")
             # TODO: Store review in DB and create corresponding graph node if needed
 
-        # Optionally add a logout button
-        if st.button("Logout"):
-            for key in list(st.session_state.keys()):
-                del st.session_state[key]
-            st.experimental_rerun()
