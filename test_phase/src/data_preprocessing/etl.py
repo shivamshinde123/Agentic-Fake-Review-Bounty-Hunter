@@ -25,7 +25,8 @@ def create_sample_data(engine):
             CREATE TABLE IF NOT EXISTS yelp_data AS
             SELECT *
             FROM merged_full_data
-            ORDER BY RANDOM();
+            ORDER BY RANDOM()
+            LIMIT 10000;
         """))
     print("✅ Sampled data saved to 'yelp_data'")
 
@@ -56,20 +57,20 @@ def data_processing():
 def csv_data(engine):
     with engine.begin() as conn:
         print("🔍 Loading processed sampled data into pandas DataFrame...")
-        reviews_df = pd.read_sql("SELECT review_id, user_id, business_id, review_stars, text, date, rating_deviation FROM yelp_data LIMIT 20000", engine)
+        reviews_df = pd.read_sql("SELECT review_id, user_id, business_id, review_stars, text, date, rating_deviation FROM yelp_data", engine)
         reviews_df.to_csv("test_phase/data/processed/reviews.csv", index=False, encoding="utf-8")
 
-        # users_df = pd.read_sql("SELECT user_id, user_name, user_review_count, yelping_since, elite_years, friends_count, average_stars, user_age FROM yelp_data", engine)
-        # users_df.to_csv("test_phase/data/processed/users.csv", index=False, encoding="utf-8")
-
-        # business_df = pd.read_sql("SELECT business_id, biz_name, biz_city, biz_state, biz_stars, biz_review_count, categories FROM yelp_data", engine)
-        # business_df.to_csv("test_phase/data/processed/business.csv", index=False, encoding="utf-8")
-
-        users_df = pd.read_sql("SELECT user_id, user_name, user_review_count, yelping_since, elite, friends, average_stars, user_age FROM users", engine)
+        users_df = pd.read_sql("SELECT DISTINCT ON (user_id) user_id, user_name, user_review_count, yelping_since, elite, friends, average_stars, user_age FROM yelp_data", engine)
         users_df.to_csv("test_phase/data/processed/users.csv", index=False, encoding="utf-8")
 
-        business_df = pd.read_sql("SELECT business_id, biz_name, biz_city, biz_state, biz_stars, biz_review_count, categories FROM business", engine)
+        business_df = pd.read_sql("SELECT DISTINCT ON (business_id) business_id, biz_name, biz_city, biz_state, biz_stars, biz_review_count, categories FROM yelp_data", engine)
         business_df.to_csv("test_phase/data/processed/business.csv", index=False, encoding="utf-8")
+
+        # users_df = pd.read_sql("SELECT user_id, user_name, user_review_count, yelping_since, elite, friends, average_stars, user_age FROM users", engine)
+        # users_df.to_csv("test_phase/data/processed/users.csv", index=False, encoding="utf-8")
+
+        # business_df = pd.read_sql("SELECT business_id, biz_name, biz_city, biz_state, biz_stars, biz_review_count, categories FROM business", engine)
+        # business_df.to_csv("test_phase/data/processed/business.csv", index=False, encoding="utf-8")
 
     print("✅ Data saved in CSV Format successfully.")
 
