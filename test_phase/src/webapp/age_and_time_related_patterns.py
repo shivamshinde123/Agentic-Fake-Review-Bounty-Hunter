@@ -57,7 +57,6 @@ class AgeTimeRelatedPatterns:
 
         return is_inappropriate
 
-
 if __name__ == "__main__":
 
     review1 = "The toy store had a magical selection. My kids loved it!"  # appropriate
