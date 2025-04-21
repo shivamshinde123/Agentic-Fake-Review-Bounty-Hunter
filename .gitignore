@@ -1,4 +1,13 @@
 /test_phase/data/
 /test_phase/spark_temp
 *.json
+env-bountyhunter
+.ipynb_checkpoints
+*.csv
 /test_phase/.env
+*.db
+.idea 
+env
+
+
+
