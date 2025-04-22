@@ -1,5 +1,8 @@
+from collections import Counter
+from datetime import datetime, timedelta
+from neo4j_db_operations import Neo4jHandler
+from sentiment_analysis import get_sentiment_label
 from sentence_transformers import SentenceTransformer, util
-
 
 class AgeTimeRelatedPatterns:
 
@@ -37,6 +40,11 @@ class AgeTimeRelatedPatterns:
             "nightclub",
         ]
 
+        self.uri = "bolt://localhost:7687"   # Neo4j server URI
+        self.user = "neo4j"                  # Username
+        self.password = "password"  
+        self.handler = Neo4jHandler(self.uri, self.user, self.password)
+
     def authenticate_appropriateness_for_children(self, review):
 
         model = SentenceTransformer("paraphrase-MiniLM-L6-v2")
@@ -56,6 +64,37 @@ class AgeTimeRelatedPatterns:
         is_inappropriate = any(sim > threshold for sim in cosine_similarities[0])
 
         return is_inappropriate
+    
+    def check_temporal_burst_with_sentiment(self, user_id, business_id):
+
+        relationship_list = self.handler.fetch_relationships(user_id, business_id)
+
+        reviews = list()
+        dates = list()
+
+        for rel in relationship_list:
+            reviews.append(rel['text'])
+            dates.append(datetime.strptime(rel['date'], "%Y-%m-%d %H:%M:%S"))
+
+        recent_reviews = [review for review, date in zip(reviews, dates) if datetime.now() - date <= timedelta(hours=48)]
+        
+        count = len(recent_reviews)
+
+        if count > 10:
+            return True
+        
+        sentiments = recent_reviews.apply(lambda review: get_sentiment_label(review))
+
+        sentiment_counts = Counter(sentiments)
+
+        if len(sentiments) in sentiment_counts.values():
+            return True
+        
+    def check_temporal_burst_without_sentiment(self, user_id, business_id):
+        pass
+    
+    def check_temporal_burst_without_sentiment(self, user_id, business_id):
+        pass
 
 if __name__ == "__main__":
 
