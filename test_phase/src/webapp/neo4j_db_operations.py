@@ -162,7 +162,7 @@ class Neo4jHandler:
         result = tx.run(query, **params)
         relationships = [record["r"] for record in result]
         return relationships
-
+        
     def fetch_relationships(self, user_id, business_id, relationship_type="REVIEWED"):
         """
         Fetch all relationships of a given type between a User and a Business.
