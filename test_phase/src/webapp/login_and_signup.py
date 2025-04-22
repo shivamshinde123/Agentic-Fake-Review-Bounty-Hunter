@@ -114,7 +114,8 @@ class LoginSignupClass:
         Insert a new row into the user database.
 
         Args:
-            query (str): SQL INSERT query.
+            query (str): SQL 
+             query.
             parameters_tuple (tuple): Tuple of values to insert.
         """
         with sqlite3.connect(self.user_database_location, check_same_thread=False) as conn:

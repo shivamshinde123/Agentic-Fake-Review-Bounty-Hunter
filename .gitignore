@@ -7,7 +7,7 @@ env-bountyhunter
 /test_phase/.env
 *.db
 .idea 
-env
+venv
 
 
 
