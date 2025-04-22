@@ -8,6 +8,7 @@ env-bountyhunter
 *.db
 .idea 
 env
+__pycache__
 
 
 
