@@ -101,7 +101,7 @@ class LoginSignupClass:
             st.session_state["mode"] = "signup"
 
         return st.session_state.get("mode", None)
-
+            
     def create_id(self, text):
         """
         Generate a unique user ID using username and timestamp.
@@ -204,4 +204,18 @@ if __name__ == "__main__":
                 review_stars=user_stars,
                 text=user_review,
             )
+
+            user_node_who_posted_review = lsc.handler.fetch_node("User", user_id=st.session_state['user_id'])
+            business_node_that_user_reviewed = lsc.handler.fetch_node("Business", business_id=business_dict[selected_business][0])
+
+            review_count_of_user_node_who_posted_review = user_node_who_posted_review['review_count']
+            review_count_of_business = business_node_that_user_reviewed['review_count']
+
+            lsc.handler.update_node("User", "user_id", user_node_who_posted_review['user_id'], review_count=review_count_of_user_node_who_posted_review+1)
+            print(f"Updated the user review count")
+            lsc.handler.update_node("Business", "business_id", business_node_that_user_reviewed['business_id'], review_count=review_count_of_business+1)
+            print(f"Updated the business review count")
             st.success("Review Submitted")
+
+
+
