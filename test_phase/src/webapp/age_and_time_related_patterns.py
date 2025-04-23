@@ -65,7 +65,7 @@ class AgeTimeRelatedPatterns:
 
         return is_inappropriate
     
-    def check_temporal_burst_with_sentiment(self, user_id, business_id):
+    def check_temporal_burst_with_sentiment(self, user_id, business_id, time_window_hours=48):
 
         relationship_list = self.handler.fetch_relationships(user_id, business_id)
 
@@ -76,7 +76,7 @@ class AgeTimeRelatedPatterns:
             reviews.append(rel['text'])
             dates.append(datetime.strptime(rel['date'], "%Y-%m-%d %H:%M:%S"))
 
-        recent_reviews = [review for review, date in zip(reviews, dates) if datetime.now() - date <= timedelta(hours=48)]
+        recent_reviews = [review for review, date in zip(reviews, dates) if datetime.now() - date <= timedelta(hours=time_window_hours)]
         
         count = len(recent_reviews)
 
