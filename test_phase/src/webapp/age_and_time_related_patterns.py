@@ -65,7 +65,7 @@ class AgeTimeRelatedPatterns:
 
         return is_inappropriate
     
-    def check_temporal_burst_with_sentiment(self, user_id, business_id, time_window_hours=48):
+    def check_temporal_burst_with_sentiment(self, user_id, business_id, review_limit=10, time_window_hours=48):
 
         relationship_list = self.handler.fetch_relationships(user_id, business_id)
 
@@ -80,15 +80,15 @@ class AgeTimeRelatedPatterns:
         
         count = len(recent_reviews)
 
-        if count > 10:
+        if count > review_limit:
             return True
         
         sentiments = recent_reviews.apply(lambda review: get_sentiment_label(review))
 
         sentiment_counts = Counter(sentiments)
 
-        if len(sentiments) in sentiment_counts.values():
-            return True
+        return len(sentiments) in sentiment_counts.values()
+            
         
     def check_temporal_burst_without_sentiment(self, user_id, business_id, deviation_threshold=3.0, review_limit=5, time_window_hours=48):
         relationship_list = self.handler.fetch_relationships(user_id, business_id)
@@ -110,7 +110,6 @@ class AgeTimeRelatedPatterns:
                 print(f"Error parsing review or deviation: {e}")
 
         return flagged_reviews >= review_limit
-
 
 if __name__ == "__main__":
 
