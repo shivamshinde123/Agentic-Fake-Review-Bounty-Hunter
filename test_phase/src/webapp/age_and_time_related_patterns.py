@@ -90,11 +90,27 @@ class AgeTimeRelatedPatterns:
         if len(sentiments) in sentiment_counts.values():
             return True
         
-    def check_temporal_burst_without_sentiment(self, user_id, business_id):
-        pass
-    
-    def check_temporal_burst_without_sentiment(self, user_id, business_id):
-        pass
+    def check_temporal_burst_without_sentiment(self, user_id, business_id, deviation_threshold=3.0, review_limit=5, time_window_hours=48):
+        relationship_list = self.handler.fetch_relationships(user_id, business_id)
+
+        if not relationship_list:
+            return False
+
+        flagged_reviews = 0
+        now = datetime.now()
+
+        for rel in relationship_list:
+            try:
+                review_time = datetime.strptime(rel['date'], "%Y-%m-%d %H:%M:%S")
+                deviation = float(rel.get('rating_deviation', 0))
+
+                if now - review_time <= timedelta(hours=time_window_hours) and deviation >= deviation_threshold:
+                    flagged_reviews += 1
+            except Exception as e:
+                print(f"Error parsing review or deviation: {e}")
+
+        return flagged_reviews >= review_limit
+
 
 if __name__ == "__main__":
 
