@@ -6,6 +6,8 @@ import sqlite3
 import streamlit as st
 from datetime import datetime
 from neo4j_db_operations import Neo4jHandler
+from age_and_time_related_patterns import AgeTimeRelatedPatterns
+from sentiment_rating_consistency import SentimentRatingConsistencyPattern
 
 
 # Define a class for handling Login and Signup functionality
@@ -188,7 +190,9 @@ if __name__ == "__main__":
         st.title("Add Review")
         selected_business = st.selectbox("Business", list(business_dict.keys()))
         user_review = st.text_input("Review")
+        st.session_state['user_review'] = user_review
         user_stars = st.selectbox("Stars", [1, 2, 3, 4, 5])
+        st.session_state['user_stars'] = user_stars
 
         if st.button("Submit Review", key="submit_review_btn"):
             review_id = lsc.create_id(user_review)
@@ -216,6 +220,30 @@ if __name__ == "__main__":
             lsc.handler.update_node("Business", "business_id", business_node_that_user_reviewed['business_id'], review_count=review_count_of_business+1)
             print(f"Updated the business review count")
             st.success("Review Submitted")
+
+            warning_list = {
+                "age_time_pattern": "User is underage and posted the review for inappropritate business",
+                "temporal_burst1": "User posted multiple positive or negative reviews in last 48 hours",
+                # "temporal_burst2": "User posted multiple positive or negative reviews in last 48 hours",
+                "inconsistent_sentiments": "User posted a review and the star rating that are not consistent with each other"
+            }
+
+            patterns_check_list = dict()
+            patterns_check_list['age_time_pattern'] = None
+            print(f"age of user: {user_node_who_posted_review['age']}")
+            if user_node_who_posted_review['age'] < 18:
+                patterns_check_list['age_time_pattern'] = AgeTimeRelatedPatterns().authenticate_appropriateness_for_children(st.session_state['user_review'])
+            patterns_check_list['temporal_burst1'] = AgeTimeRelatedPatterns().check_temporal_burst_with_sentiment(user_node_who_posted_review['user_id'], business_node_that_user_reviewed['business_id'])
+            # patterns_check_list['temporal_burst2'] = AgeTimeRelatedPatterns().check_temporal_burst_without_sentiment(user_node_who_posted_review['user_id'], business_node_that_user_reviewed['business_id'])
+            patterns_check_list['inconsistent_sentiments'] = SentimentRatingConsistencyPattern().detect_inconsistent_sentiment_reviews(st.session_state['user_id'])
+
+            for key, value in patterns_check_list.items():
+                if value == True:
+                    st.warning(warning_list[key])
+                
+
+
+
 
 
 

@@ -50,13 +50,14 @@ class SentimentRatingConsistencyPattern:
                 if not self.sentiment_matches_rating(sentiment, stars):
                     mismatches += 1
 
-                return mismatches > allowed_mismatches
+        return mismatches >= allowed_mismatches
                     
 if __name__ == "__main__":
 
     srcp = SentimentRatingConsistencyPattern()
 
-    user_id = "u12345"  # Example
+    user_id = "e1ccfbbae1a60d16314338"  # Example
 
     result = srcp.detect_inconsistent_sentiment_reviews(user_id)
     print(f"Sentiment-Rating Consistency Result: {result}")
+
