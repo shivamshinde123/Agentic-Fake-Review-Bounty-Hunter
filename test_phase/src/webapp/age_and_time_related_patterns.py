@@ -53,7 +53,7 @@ class AgeTimeRelatedPatterns:
             f"This is a {category}, which is inappropriate for children under 18"
             for category in self.restricted_categories
         ]
-
+        
         review_embedding = model.encode(review, convert_to_tensor=True)
         labels_embedding = model.encode(labels, convert_to_tensor=True)
 
