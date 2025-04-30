@@ -13,11 +13,11 @@ class SentimentRatingConsistencyPattern:
         """
         Check if the sentiment matches the given star rating.
         """
-        if sentiment == "positive" and stars >= 4:
+        if sentiment == "POSITIVE" and stars >= 4:
             return True
-        elif sentiment == "neutral" and stars == 3:
+        elif sentiment == "NEUTRAL" and stars == 3:
             return True
-        elif sentiment == "negative" and stars <= 2:
+        elif sentiment == "NEGATIVE" and stars <= 2:
             return True
         return False
 
@@ -50,11 +50,8 @@ class SentimentRatingConsistencyPattern:
                 if not self.sentiment_matches_rating(sentiment, stars):
                     mismatches += 1
 
-                if mismatches > allowed_mismatches:
-                    return "Fake"
-
-        return "Real"
-
+                return mismatches > allowed_mismatches
+                    
 if __name__ == "__main__":
 
     srcp = SentimentRatingConsistencyPattern()
