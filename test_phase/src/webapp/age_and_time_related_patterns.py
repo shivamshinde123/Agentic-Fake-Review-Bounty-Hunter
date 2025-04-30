@@ -42,7 +42,7 @@ class AgeTimeRelatedPatterns:
 
         self.uri = "bolt://localhost:7687"   # Neo4j server URI
         self.user = "neo4j"                  # Username
-        self.password = "password"  
+        self.password = "12345678"  
         self.handler = Neo4jHandler(self.uri, self.user, self.password)
 
     def authenticate_appropriateness_for_children(self, review):
@@ -74,16 +74,16 @@ class AgeTimeRelatedPatterns:
 
         for rel in relationship_list:
             reviews.append(rel['text'])
-            dates.append(datetime.strptime(rel['date'], "%Y-%m-%d %H:%M:%S"))
+            dates.append(rel['date'].to_native())
 
         recent_reviews = [review for review, date in zip(reviews, dates) if datetime.now() - date <= timedelta(hours=time_window_hours)]
         
         count = len(recent_reviews)
 
-        if count > review_limit:
+        if count >= review_limit:
             return True
         
-        sentiments = recent_reviews.apply(lambda review: get_sentiment_label(review))
+        sentiments = [get_sentiment_label(review) for review in recent_reviews]
 
         sentiment_counts = Counter(sentiments)
 
@@ -101,7 +101,7 @@ class AgeTimeRelatedPatterns:
 
         for rel in relationship_list:
             try:
-                review_time = datetime.strptime(rel['date'], "%Y-%m-%d %H:%M:%S")
+                review_time = rel['date'].to_native()
                 deviation = float(rel.get('rating_deviation', 0))
 
                 if now - review_time <= timedelta(hours=time_window_hours) and deviation >= deviation_threshold:
@@ -109,15 +109,24 @@ class AgeTimeRelatedPatterns:
             except Exception as e:
                 print(f"Error parsing review or deviation: {e}")
 
+        print(f"Flagged reviews: {flagged_reviews} within the last {time_window_hours} hours with deviation >= {deviation_threshold}")
+
         return flagged_reviews >= review_limit
 
 if __name__ == "__main__":
 
-    review1 = "The toy store had a magical selection. My kids loved it!"  # appropriate
-    review2 = "Had a wild night at this nightclub, the music and drinks were insane!"  # Inappropriate
+    # review1 = "The toy store had a magical selection. My kids loved it!"  # appropriate
+    # review2 = "Had a wild night at this nightclub, the music and drinks were insane!"  # Inappropriate
 
     atp = AgeTimeRelatedPatterns()
 
-    is_inappropriate = atp.authenticate_appropriateness_for_children(review2)
+    user_id = "448c97c01598e3a35edc8c"  # Example user ID
+    business_id = "-1PG6k_iezwJmRZLB7f6og"  # Example business ID
 
-    print(is_inappropriate)
+    # is_spam = atp.check_temporal_burst_with_sentiment(user_id, business_id, review_limit=10, time_window_hours=48)
+    # is_spam = atp.check_temporal_burst_without_sentiment(user_id, business_id)
+
+    # print(is_spam)
+    # is_inappropriate = atp.authenticate_appropriateness_for_children(review1)
+
+    # print(is_inappropriate)

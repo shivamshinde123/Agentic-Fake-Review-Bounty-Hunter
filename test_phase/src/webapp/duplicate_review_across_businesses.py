@@ -9,7 +9,7 @@ class DuplicateReviewAcrossBusinesses:
 
         self.uri = "bolt://localhost:7687"   # Neo4j server URI
         self.user = "neo4j"                  # Username
-        self.password = "password"
+        self.password = "12345678"
         self.handler = Neo4jHandler(self.uri, self.user, self.password)
 
     def check_duplicate_reviews(self, user_id):

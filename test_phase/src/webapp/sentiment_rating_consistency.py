@@ -6,7 +6,7 @@ class SentimentRatingConsistencyPattern:
     def __init__(self):
         self.uri = "bolt://localhost:7687"
         self.user = "neo4j"
-        self.password = "password"
+        self.password = "12345678"
         self.handler = Neo4jHandler(self.uri, self.user, self.password)
 
     def sentiment_matches_rating(self, sentiment, stars):

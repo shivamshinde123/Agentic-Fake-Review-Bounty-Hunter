@@ -6,7 +6,7 @@ class RatingDeviationPatterns:
     def __init__(self):
         self.uri = "bolt://localhost:7687"  # Neo4j server URI
         self.user = "neo4j"  # Username
-        self.password = "password"  
+        self.password = "12345678"  
         self.handler = Neo4jHandler(self.uri, self.user, self.password)
 
     def detect_high_rating_deviation(self, user_id, deviation_threshold=2.5, min_reviews=3):

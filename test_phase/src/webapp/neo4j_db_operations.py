@@ -181,7 +181,7 @@ if __name__ == "__main__":
     # --- Main execution: Replace these credentials as needed ---
     uri = "bolt://localhost:7687"   # Neo4j server URI
     user = "neo4j"                  # Username
-    password = "password"           # Password
+    password = "12345678"           # Password
 
     # Create an instance of the Neo4j handler
     neo4j_handler = Neo4jHandler(uri, user, password)

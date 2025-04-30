@@ -21,7 +21,7 @@ class LoginSignupClass:
         """
         self.uri = "bolt://localhost:7687"  # Neo4j server URI
         self.user = "neo4j"  # Username
-        self.password = "password"  # Password
+        self.password = "12345678"  # Password
         self.handler = Neo4jHandler(self.uri, self.user, self.password)
 
     def authenticate_user_for_login(self, username, password):
