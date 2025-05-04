@@ -12,7 +12,7 @@ df = df[~df['user_id'].astype(str).str.startswith('=')]
 df = df[~df['business_id'].astype(str).str.startswith('=')]
 
 # Sample ~2500 rows randomly
-sampled_df = df.sample(n=2500, random_state=42).reset_index(drop=True)
+sampled_df = df.sample(n=5000, random_state=42).reset_index(drop=True)
 
 # Convert datetime column
 sampled_df['date'] = pd.to_datetime(sampled_df['date'], errors='coerce')
