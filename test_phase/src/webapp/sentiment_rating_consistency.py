@@ -21,7 +21,7 @@ class SentimentRatingConsistencyPattern:
             return True
         return False
 
-    def detect_inconsistent_sentiment_reviews(self, user_id, allowed_mismatches=2):
+    def detect_inconsistent_sentiment_reviews(self, user_id, allowed_mismatches=10):
         """
         Detect if a user has inconsistent reviews.
 
